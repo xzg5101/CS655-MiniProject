@@ -10,7 +10,7 @@ def numToStr(num)->str:
     if num < 0 or num > 380204031:
         return ""
 
-
+    limit = ""
     while num > 0:
         limit = alList[(num%52)] + limit
         num = num//52
