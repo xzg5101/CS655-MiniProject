@@ -16,8 +16,7 @@ class Worker:
         "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
 
     def __init__(self):
-        self.numCap = int(math.pow(len(self.alList), self.passwordLen)-1)
-        print("cap is ", self.numCap)
+        self.numCap = int(math.pow(len(self.alList), self.passwordLen)-1)   # max number a string can be after converting to position
 
     # set methods
     def setIp(self, ip):
