@@ -4,12 +4,12 @@ import re
 import math
 
 class Node:
-    id = None   #int
-    ip = None
+    id = None       # int
+    ip = None       # str
     pwPattern = '^[a-zA-Z]{5,5}$'
     md5Pattern = '^[a-z0-9]{32,32}$'
     idPattern = '^[0, 1]{58}$'
-    numCap = None
+    numCap = None   # int
     passwordLen = 5
     idSize = 58
     alList = [ 

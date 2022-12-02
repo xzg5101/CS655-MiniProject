@@ -5,13 +5,15 @@ from Node import Node
 # worker class that can do all computing functions a worker node needs 
 class Worker(Node):
     
-    serverIp = None
-    start = None # int
-    end = None # int
+    serverIp = None # str
+    serverId = None # int
+    start = None    # int
+    end = None      # int
 
 
     def __init__(self):
         self.setNumCap()
+        self.id = self.genId()
 
     # set methods
     def setIp(self, ip:str)->None:
