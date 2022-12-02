@@ -6,7 +6,7 @@ import math
 class Node:
     id = None   #int
     ip = None
-    pattern = '^[a-zA-Z]{5,5}$'
+    pwPattern = '^[a-zA-Z]{5,5}$'
     md5Pattern = '^[a-z0-9]{32,32}$'
     idPattern = '^[0, 1]{58}$'
     numCap = None
@@ -29,7 +29,7 @@ class Node:
 
     # check if a password is valid   
     def verifyPassword(self, password)->bool:
-        return not (re.fullmatch(self.pattern, password) is None)
+        return not (re.fullmatch(self.pwPattern, password) is None)
 
     # check if a md5 hash is valid
     def verifyMd5(self, md5:str)->bool:
