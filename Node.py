@@ -29,11 +29,11 @@ class Node:
 
     # check if a password is valid   
     def verifyPassword(self, password)->bool:
-        return not (re.fullmatch(self.pwPattern, password) is None)
+        return re.fullmatch(self.pwPattern, password) is not None
 
     # check if a md5 hash is valid
     def verifyMd5(self, md5:str)->bool:
-        return not (re.fullmatch(self.md5Pattern, bin(md5)) is None)
+        return re.fullmatch(self.md5Pattern, bin(md5)) is not None
 
     # check if a ID is valid
     def verifyID(self, someId):
