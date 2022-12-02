@@ -5,12 +5,12 @@ from Node import Node
 # worker class that can do all computing functions a worker node needs 
 class Worker(Node):
     
-    serverIp = None # str
-    serverId = None # int
-    start = None    # int
-    end = None      # int
-
-
+    serverIp = None     # str
+    serverPort = None   # int
+    serverId = None     # int
+    start = None        # int
+    end = None          # int
+ 
     def __init__(self):
         self.setNumCap()
         self.id = self.genId()
@@ -20,8 +20,10 @@ class Worker(Node):
         self.ip = ip
     
     # record server IP
-    def setServerIp(self, serverIp:str)->None:
-        self.ip = serverIp
+    def setServer(self, serverIp:str, port: int)->None:
+        self.serverIp = serverIp
+        self.serverPort = port
+        
 
     #update range of search
     def updateRange(self, start:int, end:int)->None:
