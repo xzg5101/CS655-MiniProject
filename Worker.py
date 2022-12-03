@@ -1,5 +1,5 @@
 import hashlib
-
+import datetime
 from Node import Node
 
 # worker class that can do all computing functions a worker node needs 
@@ -14,6 +14,9 @@ class Worker(Node):
     def __init__(self):
         self.setNumCap()
         self.id = self.genId()
+
+    def printf(self, s:str):
+        print(f"{datetime.datetime.now()} Worker:", s)
 
     # set methods
     def setIp(self, ip:str)->None:
