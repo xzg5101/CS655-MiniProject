@@ -17,6 +17,8 @@ class Node:
         "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", \
         "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", \
         "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+
+    acts = ["reg", "wrk", "rmv", "ans", "ack"]
     
     # max number a string can be after converting to position
     def setNumCap(self)->None:
@@ -57,3 +59,15 @@ class Node:
         for i in range(len(s)):
             num += self.alList.index(s[i]) * math.pow(52, len(s)-1-i)
         return int(num)
+    
+    def makeMsg(self, act: str, id: int, payload: str):
+        return f"{act} {str(id)} {payload}"
+    
+    def verify_msg(self, msgKeys)->bool:
+        if len(msgKeys) < 2:
+            return False
+        elif not msgKeys[0] in self.acts:
+            return False
+        elif not self.verifyID(int(msgKeys[1])):
+            return False
+        return True

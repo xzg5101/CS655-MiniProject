@@ -3,7 +3,7 @@ import math
 import asyncio
 from Node import Node 
 from StatusCode import STATUS
-
+from Action import ACTION
 class Server(Node):
     numOfWorker = None  # number of workers
     workerList = []
@@ -51,17 +51,10 @@ class Server(Node):
             self.jobList.append([base, min(base+jobWidth, self.numCap)])
             base += jobWidth
     
-    def verify_worker_req(self, msgKeys)->bool:
-        if msgKeys[0] == 'reg' or msgKeys[0] == 'rmv':
-            return len(msgKeys) == 4 and self.verifyID(int(msgKeys[1]))
-        elif msgKeys[0] == 'ans':
-            return len(msgKeys) == 3 and self.verifyID(int(msgKeys[1]))
-        else:
-            return False
 
     def handle_worker_req(self, req:str)->str:
         msgKeys = req.split()
-        if not self.verify_worker_req(msgKeys):
+        if not self.verify_msg(msgKeys):
             return STATUS.NOT_ALLOWED
         if msgKeys[0] == 'reg':
             wid, wip, wp = msgKeys[1], msgKeys[2], msgKeys[3]
@@ -81,8 +74,8 @@ class Server(Node):
 
         request = (await reader.read(255)).decode('utf8')
         self.printf(f"received [{request}]")
-
-        response = self.handle_worker_req(request)
+        status = self.handle_worker_req(request)
+        response = self.makeMsg(ACTION.ACK, self.id, status)
         self.printf(f"send response [{response}]")
         writer.write(response.encode('utf8'))
         await writer.drain()
