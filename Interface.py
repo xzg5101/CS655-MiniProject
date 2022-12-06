@@ -38,24 +38,24 @@ def run_interface(form, s_ip, s_port, i_ip, i_port):
         worker_num = form.getvalue('dropdown')
     else:
         worker_num = None
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((s_ip, s_port))
-    s.sendall(f"User password: {password} Number of workers: {worker_num}".encode('utf-8'))
-    s.close()
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((i_ip, i_port))
-    s.listen()
-    connection, address = s.accept()
+    ds = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ds.connect((s_ip, s_port))
+    ds.sendall(f"User password: {password} Number of workers: {worker_num}".encode('utf-8'))
+    ds.close()
+    ls = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ls.bind((i_ip, i_port))
+    ls.listen()
+    connection, address = ls.accept()
     ans = b""
     while True:
         data = connection.recv(1024)
         if len(data) == 0:
             break
         ans += data
-    s.close()
-    print(f"User password is: {ans}")
+    ls.close()
     return ans.decode('utf-8')
 
 
 if __name__ == '__main__':
     result = run_interface(cgi_form, server_IP, server_port, interface_IP, interface_port)
+    print(f"User password is: {result}")
