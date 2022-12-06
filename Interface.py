@@ -58,4 +58,4 @@ def run_interface(form, s_ip, s_port, i_ip, i_port):
 
 
 if __name__ == '__main__':
-    result = run_interface(cgi_form, server_IP, server_port, )
+    result = run_interface(cgi_form, server_IP, server_port, interface_IP, interface_port)
