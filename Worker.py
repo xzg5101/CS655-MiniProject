@@ -62,18 +62,24 @@ class Worker(Node):
         return 0
 
 
-    def handle_worker_req(self, req:str)->str:
+    def handle_work_req(self, req:str)->str:
         msgKeys = req.split()
-        if not self.verify_msg(msgKeys):
-            return STATUS.NOT_ALLOWED
+        #if not self.verify_msg(msgKeys):
+            #return STATUS.NOT_ALLOWED
         if msgKeys[0] == 'wrk':
-            wid, wip, wp = msgKeys[1], msgKeys[2], msgKeys[3]
-            return self.register_worker(wid, wip, wp)
+            self.printf(f"recieved crack job")
+            jid, shardNo, md5, start, end = msgKeys[1], msgKeys[2], msgKeys[3], int(msgKeys[4]), int(msgKeys[5])
+            #self.printf(f"job summary: {wid} {jid} {shardNo} {md5} {start} {end}")
+            ans = self.crack(start, end, md5)
+            self.printf(f"worker find it? [{ans}]")
+            return self.makeMsg(ACTION.ANSWER, self.id, f"{jid} {shardNo} {ans}")
         elif msgKeys[0] == 'rmv':
             wid, wip, wp = msgKeys[1], msgKeys[2], msgKeys[3]
-            return self.remove_worker(wid, wip, wp)
+            return STATUS.OK
         elif msgKeys[0] == 'ans':
             wid, ans = msgKeys[1], msgKeys[2]
+            return STATUS.OK
+        elif msgKeys[0] == 'che':
             return STATUS.OK
         else:
             return STATUS.NOT_ALLOWED
@@ -83,7 +89,7 @@ class Worker(Node):
     async def handle_work(self, reader, writer):
         request = (await reader.read(255)).decode('utf8')
         self.printf(f"received [{request}]")
-        response = self.handle_worker_req(request)
+        response = self.handle_work_req(request)
         self.printf(f"send response [{response}]")
         writer.write(response.encode('utf8'))
         await writer.drain()
@@ -98,6 +104,7 @@ class Worker(Node):
         data = b""
         data += s.recv(1024)
         self.printf(f"received data [{data.decode('utf-8')}]")
+        s.close()
 
     async def run_service(self):
         s = await asyncio.start_server(self.handle_work, self.ip, self.port)

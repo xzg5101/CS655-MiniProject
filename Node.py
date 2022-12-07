@@ -63,11 +63,18 @@ class Node:
     def makeMsg(self, act: str, id: int, payload: str):
         return f"{act} {str(id)} {payload}"
     
-    def verify_msg(self, msgKeys)->bool:
+    def verify_wrk_msg(self, msgKeys)->bool:
         if len(msgKeys) < 2:
             return False
         elif not msgKeys[0] in self.acts:
             return False
         elif not self.verifyID(int(msgKeys[1])):
+            return False
+        return True
+    
+    def verify_usr_msg(self, msgKeys)->bool:
+        if len(msgKeys) > 2:
+            return False
+        elif not msgKeys[0] in self.acts:
             return False
         return True

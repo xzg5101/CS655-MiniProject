@@ -8,7 +8,17 @@ ACT_DICT = {
     'WORK':'wrk', 
     'REMOVE':'rmv', 
     'ANSWER':'ans', 
-    'ACK':'ack'
+    'ACK':'ack',
+    'CHECK': 'che'
 }
 
 ACTION = AttributeDict(ACT_DICT)
+
+
+'''
+Register:   reg self.id self.ip self.port
+Work
+
+
+
+'''
