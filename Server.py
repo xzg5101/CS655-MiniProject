@@ -167,7 +167,7 @@ class Server(Node):
         self.writer_list.append(writer)
         writer.close()
         
-     # HttpServer
+     # http_server
      async def run_req_server(self):
         server_class = HTTPServer
         handler_class = CGIHTTPRequestHandler
