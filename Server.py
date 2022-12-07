@@ -6,6 +6,11 @@ from Node import Node
 from StatusCode import STATUS
 from Action import ACTION
 from Job import Job
+from http.server import HTTPServer
+from http.server import CGIHTTPRequestHandler
+import sys
+from HTTPRequest import Resquest
+
 class Server(Node):
     numOfWorker = None  # number of workers
     workerList = []
@@ -166,13 +171,16 @@ class Server(Node):
         await writer.drain()
         self.writer_list.append(writer)
         writer.close()
-        
-     # http_server
-     async def run_req_server(self):
+
+    def test(self, md5):
+        return "hello " + md5
+
+    # http_server
+    async def run_req_server(self):
         server_class = HTTPServer
         handler_class = CGIHTTPRequestHandler
 
-        s = await server_class((self.ip, self.req_port), handler_class)
+        s = await server_class((self.ip, self.req_port), Resquest)
         self.printf(f"establish requesting handling server on {self.ip}:{self.req_port}")
         async with s:
             try:
