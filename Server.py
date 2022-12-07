@@ -137,7 +137,7 @@ class Server(Node):
         self.printf(f"scanning current worker list")
         shardNo = 0
         wkrIdx = 0
-        while shardNo < len(job.shards):
+        while shardNo < len(job.shards) and len(self.workerList) > 0:
             self.printf(f"Checking worker {self.workerList[wkrIdx]}")
             wkrID, wkrIP, wkrPort = self.workerList[wkrIdx]
             if await self.checkWorker(wkrID, wkrIP, wkrPort):
@@ -148,6 +148,8 @@ class Server(Node):
                 if reqKeys[4] != 'NOT_FOUND':
                     return reqKeys[4]
                 shardNo += 1
+            else:
+                self.remove_worker(wkrID, wkrIP, wkrPort)
             wkrIdx = (wkrIdx + 1)%len(self.workerList)
         return 'NOT_FOUND'
 
