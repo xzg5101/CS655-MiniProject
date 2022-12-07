@@ -167,9 +167,15 @@ class Server(Node):
         self.writer_list.append(writer)
         writer.close()
 
-    async def run_req_server(self):
-        s = await asyncio.start_server(self.handle_req, self.ip, self.req_port)
-        self.usr_server = s
+     async def run_req_server(self):
+        server_class = HTTPServer
+        handler_class = CGIHTTPRequestHandler
+
+        s = await server_class((self.ip, self.req_port), handler_class)
         self.printf(f"establish requesting handling server on {self.ip}:{self.req_port}")
         async with s:
-            await s.serve_forever()
+            try:
+                s.serve_forever()
+            except KeyboardInterrupt:
+                print("Keyboard interrupt closing requesting handling server.")
+                sys.exit(0)
