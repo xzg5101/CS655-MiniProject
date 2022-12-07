@@ -6,6 +6,7 @@ from Node import Node
 from StatusCode import STATUS
 from Action import ACTION
 from Job import Job
+from Environment import DEBUG
 class Server(Node):
     numOfWorker = None  # number of workers
     workerList = []
@@ -23,7 +24,9 @@ class Server(Node):
         self.setNumCap()
         self.id = self.genId()
         self.numOfWorker = 0
-        self.ip = 'localhost'
+        self.ip = '172.17.1.15'
+        if DEBUG == 1:
+            self.ip = 'localhost'
         self.wkr_port = 50002
         self.req_port = 50003
         self.writer_list = []
