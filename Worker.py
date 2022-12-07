@@ -53,7 +53,7 @@ class Worker(Node):
                 return aStr
             i += 1
             
-        return "NOTFOUND"
+        return 'NOT_FOUND'
 
     def getStatusCode(self, rep)->int:
         msgKeys = rep.split()

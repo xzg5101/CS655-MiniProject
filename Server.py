@@ -127,11 +127,7 @@ class Server(Node):
             return True
         return True
 
-    async def sendShard(self, wkrID, wkrIP, wkrPort, jobId, shardNo, md5, start, end)->str:
-        result = await self.sendToWorker(jobId, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {md5} {start} {end}")
-        return result
-
-    async def solve(self, md5):
+    async def solve_single_thread(self, md5):
         job = self.divdeJob(Job(self.genId(), md5, 0, self.numCap))
         self.printf(f"create job with id {job.id}")
         self.printf(f"scanning current worker list")
@@ -140,18 +136,51 @@ class Server(Node):
         while shardNo < len(job.shards) and len(self.workerList) > 0:
             self.printf(f"Checking worker {self.workerList[wkrIdx]}")
             wkrID, wkrIP, wkrPort = self.workerList[wkrIdx]
-            if await self.checkWorker(wkrID, wkrIP, wkrPort):
-                self.printf(f"find alive worker [{wkrID}]")
-                self.printf(f"job shard summary: {wkrID} {wkrIP}, {wkrPort}, {job.id}, {shardNo}, {md5}, {job.shards[shardNo][0]}, {job.shards[shardNo][1]}")
-                req = await self.sendShard(wkrID, wkrIP, wkrPort, job.id, shardNo, md5, job.shards[shardNo][0], job.shards[shardNo][1])
-                reqKeys = req.split()
-                if reqKeys[4] != 'NOT_FOUND':
-                    return reqKeys[4]
-                shardNo += 1
-            else:
-                self.remove_worker(wkrID, wkrIP, wkrPort)
+            result = await self.send_shard(wkrID, wkrIP, wkrPort, job.id, shardNo, md5, job.shards[shardNo][0], job.shards[shardNo][1])
+            if result != 'NOT_FOUND':
+                return result
             wkrIdx = (wkrIdx + 1)%len(self.workerList)
+            shardNo += 1
         return 'NOT_FOUND'
+
+
+    async def send_shard(self, wkrID, wkrIP, wkrPort, jobId, shardNo, md5, start, end)->str:
+        if await self.checkWorker(wkrID, wkrIP, wkrPort):
+            self.printf(f"find alive worker [{wkrID}]")
+            self.printf(f"job shard summary: {wkrID} {wkrIP} {wkrPort} {jobId} {shardNo} {md5} {start} {end}")
+            req = await self.sendToWorker(jobId, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {md5} {start} {end}")
+            reqKeys = req.split()
+            if reqKeys[4] != 'NOT_FOUND':
+                return reqKeys[4]
+        else:
+            self.remove_worker(wkrID, wkrIP, wkrPort)
+            return 'WORKER_GONE'
+        
+        return 'NOT_FOUND'
+
+    # job.shards[shardNo][0], job.shards[shardNo][1]
+    async def solve(self, md5):
+        job = self.divdeJob(Job(self.genId(), md5, 0, self.numCap))
+        self.printf(f"create job with id {job.id}")
+        self.printf(f"scanning current worker list")
+        shardNo = 0
+        wkrIdx = 0
+        solve_tasks = []
+
+        shardNo = 0
+        for i in self.workerList:
+            wkrID, wkrIP, wkrPort = i
+            solve_tasks.append(self.send_shard(wkrID, wkrIP, wkrPort, job.id, shardNo, md5, job.shards[shardNo][0], job.shards[shardNo][1]))
+
+        rst_list = await asyncio.gather(*solve_tasks)
+
+        for i in rst_list:
+            if i != 'NOT_FOUND':
+                return i
+
+        return 'NOT_FOUND'
+
+    
 
     # dealing with users
     async def handle_req(self, reader, writer):
