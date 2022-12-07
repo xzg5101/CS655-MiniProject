@@ -7,6 +7,8 @@ class Job():
     start = None
     end = None
     numOfShards = None
+    answer = None
+    solver = None
 
     def __init__(self, id, md5, start, end) -> None:
         self.id = id
@@ -15,3 +17,4 @@ class Job():
         self.start = start
         self.end = end
         self.numOfShards = 1
+        

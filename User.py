@@ -13,7 +13,7 @@ aWorker = Worker()
 aWorker.setIp(IP)
 aWorker.setServer(SERVER_IP, SERVER_PORT)
 
-aStr = 'ABCDE'
+aStr = 'CBCDE'
 locMd5 = hashlib.md5(aStr.encode()).hexdigest()
 
 msg = f"cra {locMd5}"

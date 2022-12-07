@@ -4,6 +4,7 @@ import asyncio
 import socket
 from contextlib import closing
 from Node import Node
+from Shard import Shard
 from StatusCode import STATUS
 from Action import ACTION
 
@@ -18,12 +19,15 @@ class Worker(Node):
     end = None          # int
     port = None
     registered = None   # bool
+    shard_list = None
  
     def __init__(self):
         self.setNumCap()
         self.id = self.genId()
         self.registered = False
         self.port = self.find_free_port()
+
+        self.shard_list = []
 
     def printf(self, s:str):
         print(f"{datetime.datetime.now()} Worker:", s)
@@ -46,17 +50,31 @@ class Worker(Node):
         self.end = end
 
     # imput a range and a md5 hash, check if any string in the range will have same hash as input
-    def crack(self, num1:int, num2:int, result:str)->str:
-        self.updateRange(num1, num2)
+    async def crack(self, jid:int, num1:int, num2:int, result:str)->str:
+        #self.updateRange(num1, num2)
+        self.printf(f"job {jid} begins")
         i = num1
-        while i < num2:
 
-            if (i-num1)%((num2-num1)//10) == 0:
-                self.printf(f"checked {i-num1} strings,  {num2 - i} strings left to check")      
+        print_step = (num2-num1)//10
+        check_step = (num2-num1)//100
+
+        while i < num2:
+            for j in self.shard_list:
+                if j.jid == jid and j.stop == True:
+                    self.printf(f"job {jid} terminated by stop signal, {num2 - i} strings left unchecked")
+                    self.shard_list.remove(j)
+                    return 'INTERRUPTED'
+            if (i-num1)%print_step == 0:
+                self.printf(f"tried {i-num1} strings,  {num2 - i} strings left to check")
+            if (i-num1)%check_step == 0:
+                await asyncio.sleep(0.1)         
             aStr = self.numToStr(i)
             locMd5 = hashlib.md5(aStr.encode()).hexdigest()
             if locMd5 == result:
-                return aStr
+                for j in self.shard_list:
+                    if j.jid == jid:
+                        j.answer = aStr
+                        return aStr
             i += 1
             
         return 'NOT_FOUND'
@@ -67,6 +85,9 @@ class Worker(Node):
             return int(msgKeys[-1])
         return 0
 
+    async def do_work(self, md5, start, end):
+        answer = self.crack(start, end, md5)
+        return answer
 
     def handle_work_req(self, req:str)->str:
         msgKeys = req.split()
@@ -76,9 +97,9 @@ class Worker(Node):
             self.printf(f"recieved crack job")
             jid, shardNo, md5, start, end = msgKeys[1], msgKeys[2], msgKeys[3], int(msgKeys[4]), int(msgKeys[5])
             self.printf(f"job summary: {jid} {shardNo} {md5} {start} {end}")
-            ans = self.crack(start, end, md5)
-            self.printf(f"worker find it? [{ans}]")
-            return self.makeMsg(ACTION.ANSWER, self.id, f"{jid} {shardNo} {ans}")
+            #ans = self.crack(start, end, md5)
+            #self.printf(f"worker find it? [{ans}]")
+            return self.makeMsg(ACTION.ACK, self.id, f"{jid} {shardNo} {ans}")
         elif msgKeys[0] == 'rmv':
             wid, wip, wp = msgKeys[1], msgKeys[2], msgKeys[3]
             return STATUS.OK
@@ -100,11 +121,57 @@ class Worker(Node):
     async def handle_work(self, reader, writer):
         request = (await reader.read(255)).decode('utf8')
         self.printf(f"received [{request}]")
-        response = self.handle_work_req(request)
-        self.printf(f"send response [{response}]")
-        writer.write(response.encode('utf8'))
-        await writer.drain()
-        writer.close()
+        msgKeys = request.split()
+
+        if msgKeys[0] == ACTION.WORK:
+            self.printf(f"recieved crack job")
+            jid, shardNo, md5, start, end = int(msgKeys[1]), msgKeys[2], msgKeys[3], int(msgKeys[4]), int(msgKeys[5])
+            self.printf(f"job summary: {jid} {shardNo} {md5} {start} {end}")
+            
+            shard = Shard(jid, start, end, md5)
+            self.shard_list.append(shard)
+
+            response = self.makeMsg(ACTION.ACK, jid, STATUS.OK)
+            writer.write(response.encode('utf8'))
+            await writer.drain()
+            writer.close()            
+            task = asyncio.create_task(self.crack(jid, start, end, md5))
+            task
+
+            while True:
+                await asyncio.sleep(1)
+                #self.printf(f"checking job status")
+                found = 0
+                for i in self.shard_list:
+                    found = 1
+                    if i.jid == jid and i.answer != None:
+                        await self.send_to_server(ACTION.ANSWER, jid, f"{i.answer} {self.id}")
+                        self.shard_list.remove(i)
+                        return
+                if found == 0:
+                    #self.printf(f"job answer not found")
+                    return
+                    
+                
+
+        elif msgKeys[0] == ACTION.INTERRUPT:
+            self.printf(f"this is an interrupt signal")
+            jid = int(msgKeys[1])
+            for i in self.shard_list:
+                if i.jid == jid:
+                    i.stop = True
+                    break
+            response = self.makeMsg(ACTION.ACK, self.id, STATUS.OK)
+            self.printf(f"send response [{response}]")
+            writer.write(response.encode('utf8'))
+            await writer.drain()
+            writer.close()
+        else:
+            response = self.makeMsg(ACTION.ACK, self.id, STATUS.OK)
+            self.printf(f"send response [{response}]")
+            writer.write(response.encode('utf8'))
+            await writer.drain()
+            writer.close()
     
     async def reg(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -112,6 +179,17 @@ class Worker(Node):
         self.printf("registering with "+ self.serverIp)
         reg_msg = self.makeMsg(ACTION.REGISTER, self.id, f"{self.ip} {self.port}")
         s.sendall(reg_msg.encode('utf-8'))
+        data = b""
+        data += s.recv(1024)
+        self.printf(f"received data [{data.decode('utf-8')}]")
+        s.close()
+
+    async def send_to_server(self, act, id, payload):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.serverIp, self.serverPort))
+        msg = self.makeMsg(act, id, payload)
+        self.printf(f"sending to server {msg}")
+        s.sendall(msg.encode('utf-8'))
         data = b""
         data += s.recv(1024)
         self.printf(f"received data [{data.decode('utf-8')}]")

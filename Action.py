@@ -9,7 +9,8 @@ ACT_DICT = {
     'REMOVE':'rmv', 
     'ANSWER':'ans', 
     'ACK':'ack',
-    'CHECK': 'che'
+    'CHECK': 'che',
+    'INTERRUPT':'int'
 }
 
 ACTION = AttributeDict(ACT_DICT)
