@@ -59,6 +59,7 @@ class Server(Node):
         for i in range(self.numOfWorker):
             shards.append([base, min(base+jobWidth, job.end)])
             base += jobWidth
+        job.numOfShards = len(shards)
         job.shards = shards
         return job
 
@@ -86,6 +87,17 @@ class Server(Node):
             md5 = msgKeys[1]
             return self.solve(md5)
         return STATUS.NOT_ALLOWED
+    
+    def job_summary(self, job:Job)->None:
+        self.printf(f"job summary:")
+        self.printf(f"\t id:[{job.id}]")
+        self.printf(f"\t md5:[{job.md5}]")
+        self.printf(f"\t range: [{job.start}] to [{job.end}]")
+        self.printf(f"\t number of shard:[{job.numOfShards}]")
+        for i in job.shards:
+            self.printf(f"\t\t shard:[{i}]")
+        
+        pass
     # async methods
     # dealing with workers
     async def handle_worker(self, reader, writer):
@@ -146,8 +158,8 @@ class Server(Node):
 
     async def send_shard(self, wkrID, wkrIP, wkrPort, jobId, shardNo, md5, start, end)->str:
         if await self.checkWorker(wkrID, wkrIP, wkrPort):
-            self.printf(f"find alive worker [{wkrID}]")
-            self.printf(f"job shard summary: {wkrID} {wkrIP} {wkrPort} {jobId} {shardNo} {md5} {start} {end}")
+            self.printf(f"Sending shard [{start}, {end}] to worker[{wkrID}]")
+
             req = await self.sendToWorker(jobId, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {md5} {start} {end}")
             reqKeys = req.split()
             if reqKeys[4] != 'NOT_FOUND':
@@ -167,11 +179,12 @@ class Server(Node):
         wkrIdx = 0
         solve_tasks = []
 
+        self.job_summary(job)
         shardNo = 0
         for i in self.workerList:
             wkrID, wkrIP, wkrPort = i
             solve_tasks.append(self.send_shard(wkrID, wkrIP, wkrPort, job.id, shardNo, md5, job.shards[shardNo][0], job.shards[shardNo][1]))
-
+            shardNo += 1
         rst_list = await asyncio.gather(*solve_tasks)
 
         for i in rst_list:
