@@ -2,9 +2,9 @@ import cgi, cgitb
 import socket
 
 server_IP = ""
-server_port = 10000
+server_port = 8888
 interface_IP = ""
-interface_port = 10000
+interface_port = 8888
 
 print("Content-type: text/html")
 
