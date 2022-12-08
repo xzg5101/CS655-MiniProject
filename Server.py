@@ -152,10 +152,16 @@ class Server(Node):
 
     async def checkWorker(self, wkrID, wkrIP, wkrPort)->bool:
         self.printf(f"check worker status {wkrIP}:{wkrPort}")
-        result = await self.sendToWorker(wkrID, wkrIP, wkrPort, ACTION.CHECK, "are you alive?")
-        if result != "NO_REPLY":
-            return True
-        return True
+        result = ""
+        try:
+            result = await self.sendToWorker(wkrID, wkrIP, wkrPort, ACTION.CHECK, "are you alive?")
+        except:
+            self.printf(f"worker is gone {wkrID}")
+            self.remove_worker(wkrID, wkrIP, wkrPort)
+        finally:
+            if result == "NOT_FOUND" or self.verifyPassword(result):
+                return True
+            return False
 
 
     async def send_shard(self, wkrID, wkrIP, wkrPort, shardNo)->bool:
