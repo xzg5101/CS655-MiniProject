@@ -1,12 +1,20 @@
 import hashlib
 import socket
+from Environment import DEBUG
 from Worker import Worker
 import re
 
-IP = 'localhost'
+IP = '127.0.0.1'
 PORT = 50010
-SERVER_IP = 'localhost'
-SERVER_PORT = 50003
+SERVER_IP = '172.17.1.15'
+SERVER_PORT = 50002
+
+
+if DEBUG == 1:
+    IP = 'localhost'
+    PORT = 50010
+    SERVER_IP = 'localhost'
+    SERVER_PORT = 50002
 
 aWorker = Worker()
 
