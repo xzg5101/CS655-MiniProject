@@ -158,10 +158,11 @@ class Server(Node):
         except:
             self.printf(f"worker is gone {wkrID}")
             self.remove_worker(wkrID, wkrIP, wkrPort)
-        finally:
-            if result == "NOT_FOUND" or self.verifyPassword(result):
-                return True
             return False
+        finally:
+            self.printf(f"worker {wkrID} status {result}")
+            return True
+
 
 
     async def send_shard(self, wkrID, wkrIP, wkrPort, shardNo)->bool:
