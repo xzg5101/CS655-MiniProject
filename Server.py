@@ -234,8 +234,17 @@ class Server(Node):
             
         return 'NOT_FOUND'
         
-                
-    
+    async def get_answer(self, md5:str)->str:
+        solve_task = asyncio.create_task(self.solve(md5))
+        solve_task
+        timeout = time.time() + self.compute_time_out//self.numOfWorker
+        
+        while time.time() < timeout:
+            if self.job != None and self.job.solved == True:
+                return self.job.answer
+            await asyncio.sleep(0.1)
+        return 'NOT_FOUND'
+
 
     # dealing with users
     async def handle_req(self, reader, writer):
@@ -244,7 +253,7 @@ class Server(Node):
         self.printf(f"received user msg[{request}]")
         reqKeys = request.split()
         time_before = time.time()
-        ans = await self.solve(reqKeys[1])
+        ans = await self.get_answer(reqKeys[1])
         time_after = time.time()
         timeSpent = time_after - time_before
         self.printf(f"found answer {ans}, time elapsed [{round(timeSpent)}]")
