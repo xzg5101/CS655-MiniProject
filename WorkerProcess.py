@@ -2,18 +2,21 @@ import socket
 from Worker import Worker
 import asyncio
 from Environment import DEBUG, SERVER_IP, WORKER_PORT
+import subprocess
 
 IP = '127.0.0.1'
 PORT = 50006
 servreIP = SERVER_IP
-
+selfIP = '127.0.0.1'
 
 if DEBUG == 1: 
     servreIP = '127.0.0.1'
+else:
+    selfIP = subprocess.getoutput("hostname -I").split()[0]
 
 aWorker = Worker()
 
-aWorker.setIp(IP)
+aWorker.setIp(selfIP)
 aWorker.setServer(servreIP, WORKER_PORT)
 msg = f"reg {aWorker.id} {aWorker.ip} {PORT}"
 
