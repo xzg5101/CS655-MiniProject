@@ -22,7 +22,7 @@ class Node:
     
     # max number a string can be after converting to position
     def setNumCap(self)->None:
-        self.numCap = int(math.pow(len(self.alList), self.passwordLen)-1)   
+        self.numCap = int(math.pow(len(self.alList), self.passwordLen))   
 
 
     # 58 bit snowflake id: first 46 bits: curret time accurrate to 1/10000 second, last 12 bits: random number
