@@ -247,7 +247,7 @@ class Server(Node):
         time_after = time.time()
         timeSpent = time_after - time_before
         self.printf(f"found answer {ans}, time elapsed [{round(timeSpent)}]")
-        response = self.makeMsg(ACTION.ANSWER, self.id, ans)
+        response = self.makeMsg(ACTION.ANSWER, self.id, f"{ans} {timeSpent}")
         writer.write(response.encode('utf8'))
         await writer.drain()
         writer.close()

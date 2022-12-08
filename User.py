@@ -13,7 +13,7 @@ if DEBUG == 1:
     serverIP = '127.0.0.1'
 
 
-aStr = 'bgFgu'
+aStr = 'AAAAc'
 locMd5 = hashlib.md5(aStr.encode()).hexdigest()
 
 msg = f"cra {locMd5}"
@@ -27,5 +27,6 @@ def query():
     data += s.recv(1024)
     ans = data.decode().split()
     print(f"received result [{ans[2]}], is it correct?", ans[2] == aStr)
+    print(f"spent [{ans[3]}] seconds")
 
 query()
