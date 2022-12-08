@@ -135,16 +135,22 @@ class Server(Node):
 
     async def sendToWorker(self, id, wkrIP, wkrPort, act, payload)->str:
         res = b""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            #self.printf(f"sending to worker{wkrIP}:{wkrPort}")
+        data = ""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
             s.connect((wkrIP , wkrPort))
             reg_msg = self.makeMsg(act, id, payload)
             await asyncio.sleep(1)
             s.sendall(reg_msg.encode('utf-8'))
             res = b""
             res += s.recv(1024)
-        data = res.decode('utf-8')
+
+            data = res.decode('utf-8')
+        except:
+            raise Exception(f"Failed write to worker at {wkrIP}:{wkrPort}")
         #self.printf(f"received data [{data}]")
+        finally:
+            s.close()
         if not len(data) == 0:
             return data
         else:
