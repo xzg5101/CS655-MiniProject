@@ -1,24 +1,20 @@
 import socket
 from Worker import Worker
 import asyncio
-from Environment import DEBUG
+from Environment import DEBUG, SERVER_IP, WORKER_PORT
 
 IP = '127.0.0.1'
 PORT = 50006
-SERVER_IP = '172.17.1.15'
-SERVER_PORT = 50002
+servreIP = SERVER_IP
 
 
-if DEBUG == 1:
-    IP = 'localhost'
-    PORT = 50006
-    SERVER_IP = 'localhost'
-    SERVER_PORT = 50002
+if DEBUG == 1: 
+    servreIP = '127.0.0.1'
 
 aWorker = Worker()
 
 aWorker.setIp(IP)
-aWorker.setServer(SERVER_IP, SERVER_PORT)
+aWorker.setServer(servreIP, WORKER_PORT)
 msg = f"reg {aWorker.id} {aWorker.ip} {PORT}"
 
 

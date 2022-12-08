@@ -1,8 +1,14 @@
 
 import asyncio
 from Server import Server
+from Environment import DEBUG, SERVER_IP, REQUEST_PORT, WORKER_PORT
 
-aServer = Server()
+serverIP = SERVER_IP
+
+if DEBUG == 1:
+    serverIP = '127.0.0.1'
+
+aServer = Server(serverIP, WORKER_PORT, REQUEST_PORT)
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 loop.create_task(aServer.run_wkr_server())

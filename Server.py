@@ -22,15 +22,13 @@ class Server(Node):
 
     compute_time_out = None
 
-    def __init__(self):
+    def __init__(self, ip, wkr_port, req_port):
         self.setNumCap()
         self.id = self.genId()
         self.numOfWorker = 0
-        self.ip = '172.17.1.15'
-        if DEBUG == 1:
-            self.ip = 'localhost'
-        self.wkr_port = 50002
-        self.req_port = 50003
+        self.ip = ip
+        self.wkr_port = wkr_port
+        self.req_port = req_port
         self.compute_time_out = 17000   # 2 times the rough estimatino of a single machine loop through all strings
 
     def printf(self, s:str):
