@@ -236,7 +236,7 @@ class Resquest(BaseHTTPRequestHandler, Server, Node):
 
 
 if __name__ == '__main__':
-    host = ('localhost', 8888)
+    host = ('', 8888)
     server = HTTPServer(host, Resquest)
     print("Starting server, listen at: %s:%s" % host)
     server.serve_forever()
