@@ -13,7 +13,7 @@ if DEBUG == 1:
     serverIP = '127.0.0.1'
 
 
-aStr = 'AgegR'
+aStr = 'bgFgu'
 locMd5 = hashlib.md5(aStr.encode()).hexdigest()
 
 msg = f"cra {locMd5}"

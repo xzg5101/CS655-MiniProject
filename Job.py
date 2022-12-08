@@ -12,6 +12,8 @@ class Job():
     solved = None
     solver = None
     wkr_cnt = None
+    result_list = None
+    done = None
 
     def __init__(self, id, md5, start, end) -> None:
         self.id = id
@@ -23,3 +25,11 @@ class Job():
         self.solved = False
         self.numOfShards = 1
         self.wkr_cnt = 0
+        self.done = False
+        self.result_list = []
+
+    def scanned(self):
+        for i in self.shard_flags:
+            if i == False :
+                return False
+        return True

@@ -89,20 +89,12 @@ class Server(Node):
                     self.job.solved = True
                     self.job.shard_flags[shardNo] = True
                 elif ans == 'NOT_FOUND':
+                    self.printf(f"worker {wid} found nothing in its shard")
                     self.job.shard_flags[shardNo] = True
                 
 
             return STATUS.OK
         
-        return STATUS.NOT_ALLOWED
-
-    def handle_user_req(self, req:str)->str:
-        msgKeys = req.split()
-        if not self.verify_usr_msg(msgKeys):
-            return STATUS.NOT_ALLOWED
-        if msgKeys[0] == 'cra':
-            md5 = msgKeys[1]
-            return self.solve(md5)
         return STATUS.NOT_ALLOWED
     
     def job_summary(self, job:Job)->None:
@@ -176,13 +168,14 @@ class Server(Node):
             req = await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {self.job.md5} {self.job.shards[shardNo][0]} {self.job.shards[shardNo][1]}")
             self.printf(f"Sent {shardNo}th shard [{self.job.shards[shardNo][0]} {self.job.shards[shardNo][1]}] to worker[{wkrID}]")
             self.job.wkr_cnt += 1
-            self.job.shard_flags[shardNo] = True
+            #self.job.shard_flags[shardNo] = True
             #reqKeys = req.split()
         else:
             self.remove_worker(wkrID, wkrIP, wkrPort)
         return True
 
     async def solve(self, md5, start = 0, end = 380204032):
+        #self.job = None
         self.job = self.divdeJob(Job(self.genId(), md5, start,end))
         #self.printf(f"create job with id {job.id}")
         shardNo = 0
@@ -202,47 +195,44 @@ class Server(Node):
         for i in solve_tasks:
             await i
 
-        if self.numOfWorker == 0:
-            return 'NO_WORKER'
-        timeout = time.time() + self.compute_time_out//self.numOfWorker
-        while time.time() < timeout:
-            if self.job.solved == True:
-                for j in self.workerList:
-                    wkrID, wkrIP, wkrPort = j
-                    if int(wkrID) != self.job.solver:
-                        await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.INTERRUPT, 'EMPTY')
-                        self.printf(f"sent interrupt to worker [{wkrID}]")
-                return self.job.answer
-            await asyncio.sleep(0.1)
-            if self.numOfWorker == 0:
-                return 'NO_WORKER'
-
-        untouched_list = []
-        for i, flag in enumerate(self.job.shard_flags):
-            if flag == False:
-                untouched_list.append(self.job.shards[i])
+    
+    async def stop_workers(self)->None:
+        for j in self.workerList:
+            wkrID, wkrIP, wkrPort = j
+            if self.job != None and int(wkrID) == self.job.solver:
+                continue
+            await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.INTERRUPT, 'EMPTY')
+            self.printf(f"sent interrupt to worker [{wkrID}]")
         
-        for i in untouched_list:
-            locResult =  await self.solve(md5, i[0], i[1])
-            if self.job.solved == True:
-                for j in self.workerList:
-                    wkrID, wkrIP, wkrPort = j
-                    if int(wkrID) != self.job.solver:
-                        await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.INTERRUPT, 'EMPTY')
-                        self.printf(f"sent interrupt to worker [{wkrID}]")
-                return self.job.answer
-            
-        return 'NOT_FOUND'
-        
-    async def get_answer(self, md5:str)->str:
-        solve_task = asyncio.create_task(self.solve(md5))
+    async def get_answer(self, md5:str, start = 0, end = 380204032)->str:
+        self.job = None
+        solve_task = asyncio.create_task(self.solve(md5, start, end))
         solve_task
         timeout = time.time() + self.compute_time_out//self.numOfWorker
-        
         while time.time() < timeout:
-            if self.job != None and self.job.solved == True:
-                return self.job.answer
+            if self.job != None:
+                if self.job.solved == True:
+                    final_answer = self.job.answer
+                    stop_task = asyncio.create_task(self.stop_workers())
+                    stop_task
+                    return final_answer
+                if self.job.scanned():
+                    self.printf(f"all scanned")
+                    return 'NOT_FOUND'
             await asyncio.sleep(0.1)
+
+        shard_flags = self.job.shard_flags
+        shards = self.job.shards
+        for i, flag in enumerate(shard_flags):
+            if flag == False:
+                result = await self.get_answer(md5, shards[i][0], shards[i][1])
+                if self.verifyPassword(result):
+                    stop_task = asyncio.create_task(self.stop_workers())
+                    stop_task
+                    return result
+
+        stop_task = asyncio.create_task(self.stop_workers())
+        stop_task
         return 'NOT_FOUND'
 
 
