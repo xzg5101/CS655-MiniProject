@@ -196,6 +196,8 @@ class Server(Node):
         for i in solve_tasks:
             await i
 
+        if self.numOfWorker == 0:
+            return 'NO_WORKER'
         timeout = time.time() + self.compute_time_out//self.numOfWorker
         while time.time() < timeout:
             if self.job.solved == True:
@@ -206,7 +208,7 @@ class Server(Node):
                         self.printf(f"sent interrupt to worker [{wkrID}]")
                 return self.job.answer
             await asyncio.sleep(0.1)
-            if len(self.workerList) < 0:
+            if self.numOfWorker == 0:
                 return 'NO_WORKER'
 
         untouched_list = []
