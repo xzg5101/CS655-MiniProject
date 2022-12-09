@@ -12,7 +12,7 @@ The public IP of the server is at 143.215.216.200.
 
 ## To run this program:
 
-1.  clone the repository to all machines (both server node and worker nodes). You can also run the entire program on one machine.
+1.  Clone the repository to all machines (both server node and worker nodes). You can also run the entire program on one machine.
 2.  Before you start:
     - If you want to run the program on multiple machines, make sure the "DEBUG" variable in Environment.py is 0 (**default is 0**), and the SERVER_IP is changed to the public IP of the server node.
     - If you want to run the program on a single local host, make sure the "DEBUG" variable in Environment.py is 1 (**default is 0**). You may ignore the SERVER_IP variable
