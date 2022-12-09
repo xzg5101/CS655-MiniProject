@@ -3,6 +3,9 @@ import asyncio
 from Server import Server
 from Environment import DEBUG, SERVER_IP, REQUEST_PORT, WORKER_PORT
 
+# run this file to start a user process on a node
+# Must run before all worker nodes
+
 serverIP = SERVER_IP
 
 if DEBUG == 1:

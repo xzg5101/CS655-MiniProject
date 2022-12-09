@@ -28,6 +28,7 @@ class Job():
         self.done = False
         self.result_list = []
 
+    # if all shards of this job has been worked by a worker
     def scanned(self):
         for i in self.shard_flags:
             if i == False :

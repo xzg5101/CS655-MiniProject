@@ -34,23 +34,26 @@ class Server(Node):
     def printf(self, s:str):
         print(f"{datetime.datetime.now()} Server:", s)
 
+    # put a new worker in list
     def register_worker(self, workerID, workerIP, workerPort):
-        if any(workerID in worker for worker in self.workerList):
+        if [workerID, workerIP, workerPort] in self.workerList:
             return STATUS.DUPLICATED
         self.workerList.append([workerID, workerIP, int(workerPort)])
         self.numOfWorker += 1
         self.printf(f"registered worker with id {workerID} and ip {workerIP}")
         return STATUS.OK
     
+    # remove a worker from list
     def remove_worker(self, workerID, workerIP, workerPort):
-        if not any(workerID in worker for worker in self.workerList):
+        if not [workerID, workerIP, workerPort] in self.workerList:
             return STATUS.NOT_FOUND
         self.workerList.remove([workerID, workerIP, workerPort])
         self.numOfWorker -= 1
         self.printf(f"removed worker with id {workerID} and ip {workerIP}")
         return STATUS.OK
 
-    def divdeJob(self, job:Job):
+    # input a job, divide based on current worker number
+    def divide_job(self, job:Job):
         # no workers
         if self.numOfWorker == 0:
             return job
@@ -69,6 +72,7 @@ class Server(Node):
         job.shard_flags = shard_flags
         return job
 
+    # input a request, return the status
     def handle_worker_req(self, req:str)->str:
         msgKeys = req.split()
         if not self.verify_wrk_msg(msgKeys):
@@ -91,12 +95,10 @@ class Server(Node):
                 elif ans == 'NOT_FOUND':
                     self.printf(f"worker {wid} found nothing in its shard")
                     self.job.shard_flags[shardNo] = True
-                
-
             return STATUS.OK
-        
         return STATUS.NOT_ALLOWED
     
+    # print a job summary
     def job_summary(self, job:Job)->None:
         self.printf(f"job summary:")
         self.printf(f"\tid:\t[{job.id}]")
@@ -110,14 +112,14 @@ class Server(Node):
     # dealing with workers
     async def handle_worker(self, reader, writer):
         request = (await reader.read(255)).decode('utf8')
-        #self.printf(f"received worker msg[{request}]")
         status = self.handle_worker_req(request)
         response = self.makeMsg(ACTION.ACK, self.id, status)
-        #self.printf(f"send response [{response}]")
         writer.write(response.encode('utf8'))
         await writer.drain()
         writer.close()
 
+    # start the woker register server
+    # this server take care of new register workers
     async def run_wkr_server(self):
         s = await asyncio.start_server(self.handle_worker, self.ip, self.wkr_port)
         self.wkr_server = s
@@ -125,7 +127,8 @@ class Server(Node):
         async with s:
             await s.serve_forever()
 
-    async def sendToWorker(self, id, wkrIP, wkrPort, act, payload)->str:
+    # send a message to server
+    async def send_to_worker(self, id, wkrID, wkrIP, wkrPort, act, payload)->str:
         res = b""
         data = ""
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,11 +139,9 @@ class Server(Node):
             s.sendall(reg_msg.encode('utf-8'))
             res = b""
             res += s.recv(1024)
-
             data = res.decode('utf-8')
         except:
-            raise Exception(f"Failed write to worker at {wkrIP}:{wkrPort}")
-        #self.printf(f"received data [{data}]")
+             self.remove_worker(wkrID, wkrIP, wkrPort)
         finally:
             s.close()
         if not len(data) == 0:
@@ -148,42 +149,42 @@ class Server(Node):
         else:
             return "NO_REPLY"
 
-    async def checkWorker(self, wkrID, wkrIP, wkrPort)->bool:
+    # check if a worker is alive.  if the worker failed the check, remove the worker
+    async def check_worker(self, wkrID, wkrIP, wkrPort)->bool:
         self.printf(f"check worker status {wkrIP}:{wkrPort}")
         result = ""
+        status = False
         try:
-            result = await self.sendToWorker(wkrID, wkrIP, wkrPort, ACTION.CHECK, "are you alive?")
+            result = await self.send_to_worker(wkrID, wkrID, wkrIP, wkrPort, ACTION.CHECK, "are you alive?")
         except:
-            self.printf(f"worker is gone {wkrID}")
             self.remove_worker(wkrID, wkrIP, wkrPort)
-            return False
-        finally:
-            self.printf(f"worker {wkrID} status {result}")
-            return True
+            self.printf(f"worker is gone {wkrID}, deleted")
+            status = False
+        
+        self.printf(f"worker {wkrID} status {result}")
+        status = True
+        return status
 
 
-
+    # call sent to wkr and send a shard of job to a worker
+   
     async def send_shard(self, wkrID, wkrIP, wkrPort, shardNo)->bool:
-        if await self.checkWorker(wkrID, wkrIP, wkrPort):
-            req = await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {self.job.md5} {self.job.shards[shardNo][0]} {self.job.shards[shardNo][1]}")
+        if await self.check_worker(wkrID, wkrIP, wkrPort):
+            req = await self.send_to_worker(self.job.id, wkrID, wkrIP, wkrPort, ACTION.WORK, f"{shardNo} {self.job.md5} {self.job.shards[shardNo][0]} {self.job.shards[shardNo][1]}")
             self.printf(f"Sent {shardNo}th shard [{self.job.shards[shardNo][0]} {self.job.shards[shardNo][1]}] to worker[{wkrID}]")
             self.job.wkr_cnt += 1
-            #self.job.shard_flags[shardNo] = True
-            #reqKeys = req.split()
+
         else:
             self.remove_worker(wkrID, wkrIP, wkrPort)
         return True
 
+    # tell all workers to start the new job. does not return the answer
     async def solve(self, md5, start = 0, end = 380204032):
-        #self.job = None
-        self.job = self.divdeJob(Job(self.genId(), md5, start,end))
-        #self.printf(f"create job with id {job.id}")
+        self.job = self.divide_job(Job(self.genId(), md5, start,end))
         shardNo = 0
         wkrIdx = 0
         solve_tasks = []
 
-        # scan workers
-        #self.printf(f"scanning current worker list")
         self.job_summary(self.job)
         shardNo = 0
         for i in self.workerList:
@@ -195,15 +196,16 @@ class Server(Node):
         for i in solve_tasks:
             await i
 
-    
+    # send a interrupt signal to all slow bird
     async def stop_workers(self)->None:
         for j in self.workerList:
             wkrID, wkrIP, wkrPort = j
             if self.job != None and int(wkrID) == self.job.solver:
                 continue
-            await self.sendToWorker(self.job.id, wkrIP, wkrPort, ACTION.INTERRUPT, 'EMPTY')
+            await self.send_to_worker(self.job.id, wkrID, wkrIP, wkrPort, ACTION.INTERRUPT, 'EMPTY')
             self.printf(f"sent interrupt to worker [{wkrID}]")
-        
+    
+    # call this to solve a MD5. Return the answer
     async def get_answer(self, md5:str, start = 0, end = 380204032)->str:
         self.job = None
         solve_task = asyncio.create_task(self.solve(md5, start, end))
@@ -221,6 +223,7 @@ class Server(Node):
                     return 'NOT_FOUND'
             await asyncio.sleep(0.1)
 
+        # if some worker dead in progress of working 
         shard_flags = self.job.shard_flags
         shards = self.job.shards
         for i, flag in enumerate(shard_flags):
@@ -252,6 +255,7 @@ class Server(Node):
         await writer.drain()
         writer.close()
 
+    # run a server that accept user requests
     async def run_req_server(self):
         s = await asyncio.start_server(self.handle_req, self.ip, self.req_port)
         self.usr_server = s

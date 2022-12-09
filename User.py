@@ -7,13 +7,14 @@ IP = '127.0.0.1'
 PORT = 50010
 serverIP = SERVER_IP
 
-
+# Test code for the program. Not part of the fucntional code
+# remove this file does not influence the function
 
 if DEBUG == 1:
     serverIP = '127.0.0.1'
 
 
-aStr = 'AAAAc'
+aStr = 'BAAAc'
 locMd5 = hashlib.md5(aStr.encode()).hexdigest()
 
 msg = f"cra {locMd5}"

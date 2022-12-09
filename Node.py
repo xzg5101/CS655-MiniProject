@@ -3,6 +3,8 @@ import random
 import re
 import math
 
+
+# backbone class for server and worker
 class Node:
     id = None       # int
     ip = None       # str
@@ -12,6 +14,8 @@ class Node:
     numCap = None   # int
     passwordLen = 5
     idSize = 58
+    
+    # all chars that may occur
     alList = [ 
         "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", \
         "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", \
@@ -60,9 +64,11 @@ class Node:
             num += self.alList.index(s[i]) * math.pow(52, len(s)-1-i)
         return int(num)
     
+    # make a standard format message
     def makeMsg(self, act: str, id: int, payload: str):
         return f"{act} {str(id)} {payload}"
     
+    # not used
     def verify_wrk_msg(self, msgKeys)->bool:
         if len(msgKeys) < 2:
             return False
@@ -72,6 +78,7 @@ class Node:
             return False
         return True
     
+    # not used
     def verify_usr_msg(self, msgKeys)->bool:
         if len(msgKeys) > 2:
             return False
