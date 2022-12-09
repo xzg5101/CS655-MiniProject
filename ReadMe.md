@@ -21,7 +21,7 @@ The program must run with Python3.9 (all server and worker nodes).
 
     - One machines without lower version python, run following command below to check if python 3.9 is installed:
 
-             pyhton3.9 --version_
+             pyhton3.9 --version
 
 5.  Start the Server process on server node with following command:
 
@@ -32,3 +32,7 @@ The program must run with Python3.9 (all server and worker nodes).
         pyhton3.9 WorkerProcess.py
 
     Now the service is started
+7. To test the basic function of the program, on any remote machine, clone the repository, go to the Environment.py, change the SERVER_IP  variable to the public IP of the server node, make sure the DEBUG variable is 0 (default is 0), go to the User.py file, modify the variable _aStr_ to any string you want to test, then run following command:
+        pyhton3.9 User.py
+        
+The server will reply the same answer after a period of time. The time may be form 3 second over 800 second depending on number of workers and the string's property. 
