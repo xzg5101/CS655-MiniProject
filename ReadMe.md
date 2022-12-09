@@ -36,3 +36,8 @@ The program must run with Python3.9 (all server and worker nodes).
         pyhton3.9 User.py
         
 The server will reply the same answer after a period of time. The time may be form 3 second over 800 second depending on number of workers and the string's property. 
+
+Here is a video demonstrate the function:
+
+https://user-images.githubusercontent.com/72267123/206622970-e5accbf4-d74a-4e0a-ab6b-0c59b44be4c5.mp4
+
