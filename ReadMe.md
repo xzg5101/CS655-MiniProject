@@ -6,6 +6,10 @@
 
 The program must run with Python3.9 (all server and worker nodes).
 
+The program cannot process multiple query at the same time, please do not send multiple query at the same time.
+
+The public IP of the server is at 143.215.216.200.
+
 ## To run this program:
 
 1.  clone the repository to all machines (both server node and worker nodes). You can also run the entire program on one machine.
